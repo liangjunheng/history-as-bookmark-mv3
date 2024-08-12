@@ -24,17 +24,39 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-// 把浏览历史保存到书签
+var interval = null
+var isLocked = false
 async function saveHistoryByBookmark() {
+  if(interval){
+    clearInterval(interval);
+  }
+  if (isLocked) {
+    // console.info('saveHistoryByBookmark isLocked!!!!!!!!!!!!!!!!!!')
+    interval = setInterval(saveHistoryByBookmark, 1000)
+    return
+  }
+  isLocked = true
+  try {
+    await saveHistoryByBookmarkLocked()
+  } catch (error) {
+    console.warn('saveHistoryByBookmark, error: ' + error)
+  } finally {
+    isLocked = false
+  }
+}
+
+// 把浏览历史保存到书签
+async function saveHistoryByBookmarkLocked() {
   // 获取最新书签对应的那条浏览记录
   let lastHistoryItem;
   // 获取插件最新保存的书签
   const bookmark = await getRecentBookmark();
-  if(bookmark){
+  if(bookmark && bookmark.url) {
+    // console.info('bootmarkHistories: ' + 'bookmark: ' + bookmark.title)
     const historyItems = await browser.history.search({text: bookmark.url, maxResults: 1})
     if (historyItems.length > 0) {
-      lastHistoryItem = historyItems[0].lastVisitTime
-      // console.info('bootmarkHistories: ' + 'latest: ' + historyItems[0].title)
+      lastHistoryItem = historyItems[0]
+      // console.info('bootmarkHistories: ' + 'lastHistoryItem: ' + historyItems[0].title)
     }
   }
 

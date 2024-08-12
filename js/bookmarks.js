@@ -2,7 +2,9 @@ const ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER___ = '___HISTORY___';
 let ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___ = null;
 
 async function createHistoryBookmarkFolder(name = ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER___){
-  const bookmarks = await browser.bookmarks.search({title: name})
+  let bookmarks = await browser.bookmarks.search({title: name})
+  bookmarks = bookmarks.filter(item => item.title == name)
+
   let nodeId
   if(bookmarks.length > 0){
     nodeId = bookmarks[0].id
@@ -21,7 +23,7 @@ async function getRecentBookmark() {
   let bookmarks = await browser.bookmarks.getRecent(50)
   for (let bookmark of bookmarks) {
     if (bookmark.parentId == ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___) {
-      return bookmarks[0]
+      return bookmark
     }
   }
   return null
