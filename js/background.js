@@ -26,26 +26,30 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 // 把浏览历史保存到书签
 async function saveHistoryByBookmark() {
-  // 获取上次保留浏览历史结束的位置
-  let lastIndexTimeResult = 0
-
+  // 获取最新书签对应的那条浏览记录
+  let lastHistoryItem;
   // 获取插件最新保存的书签
   const bookmark = await getRecentBookmark();
   if(bookmark){
     const historyItems = await browser.history.search({text: bookmark.url, maxResults: 1})
     if (historyItems.length > 0) {
-      lastIndexTimeResult = historyItems[0].lastVisitTime
+      lastHistoryItem = historyItems[0].lastVisitTime
       // console.info('bootmarkHistories: ' + 'latest: ' + historyItems[0].title)
     }
   }
 
-  // 加上0.001避免重复添加最新的书签
-  const startTime = lastIndexTimeResult + 0.001
+  // 定义获取浏览历史的开始时间
+  let lastSavedBookmarkTime = 0
+  if(lastHistoryItem) {
+    lastSavedBookmarkTime = lastHistoryItem.lastVisitTime
+  }
+
   // 获取浏览历史
-  let histories = await browser.history.search({text: '', startTime: startTime, maxResults: 1000000})
-  histories = histories.filter(item => !isInvalidHistory(item.url))
+  let histories = await browser.history.search({text: '', startTime: lastSavedBookmarkTime, maxResults: 1000000})
+  // !(lastHistoryItem && item.id == lastHistoryItem.id) 因为lastHistoryItem已经保存到书签，所以丢弃该历史记录
+  histories = histories.filter(item => !isInvalidHistory(item.url) && !(lastHistoryItem && item.id == lastHistoryItem.id))
   histories.sort((a, b) => a.lastVisitTime - b.lastVisitTime);
-  console.info('histories'+ ', lastIndexTimeResult: ' + lastIndexTimeResult + ', size: ' + (histories.length) )
+  console.info('histories'+ ', lastSavedBookmarkTime: ' + lastSavedBookmarkTime + ', size: ' + (histories.length) )
   
   // 循环查询的浏览历史另保存为书签
   for (var ht of histories) {
