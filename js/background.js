@@ -17,6 +17,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete') {
         // console.log(`页面 status: ${changeInfo.status}`);
         console.log(`tabs.onUpdated --> title: ${tab.title}, url: ${tab.url}`);
+        if(isInvalidHistory(tab.url)) {
+          return
+        }
         saveHistoryByBookmark()
     }
 });
@@ -26,18 +29,20 @@ async function saveHistoryByBookmark() {
   // 获取上次保留浏览历史结束的位置
   let lastIndexTimeResult = 0
 
-  const bookmarks = await getRecentBookmarks(1);
-  if (bookmarks.length > 0) {
-      // 倒数第一个保存的书签，也就是最新的书签
-      const historyItems = await browser.history.search({text: bookmarks[0].url, maxResults: 1})
-      if (historyItems.length > 0) {
+  // 获取插件最新保存的书签
+  const bookmark = await getRecentBookmark();
+  if(bookmark){
+    const historyItems = await browser.history.search({text: bookmark.url, maxResults: 1})
+    if (historyItems.length > 0) {
       lastIndexTimeResult = historyItems[0].lastVisitTime
-      }
       // console.info('bootmarkHistories: ' + 'latest: ' + historyItems[0].title)
+    }
   }
 
+  // 加上0.001避免重复添加最新的书签
+  const startTime = lastIndexTimeResult + 0.001
   // 获取浏览历史
-  let histories = await browser.history.search({text: '', startTime: Number(lastIndexTimeResult), maxResults: 1000000})
+  let histories = await browser.history.search({text: '', startTime: startTime, maxResults: 1000000})
   histories = histories.filter(item => !isInvalidHistory(item.url))
   histories.sort((a, b) => a.lastVisitTime - b.lastVisitTime);
   console.info('histories'+ ', lastIndexTimeResult: ' + lastIndexTimeResult + ', size: ' + (histories.length) )

@@ -1,5 +1,5 @@
 const ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER___ = '___HISTORY___';
-let ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___;
+let ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___ = null;
 
 async function createHistoryBookmarkFolder(name = ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER___){
   const bookmarks = await browser.bookmarks.search({title: name})
@@ -15,14 +15,16 @@ async function createHistoryBookmarkFolder(name = ___EXTENSION_HISTORY_AS_BOOKMA
   return Promise.resolve(nodeId)
 }
 
-async function getRecentBookmarks(count = 1) {
+async function getRecentBookmark() {
   await createHistoryBookmarkFolder()
   // console.info(`getRecentBookmarks, ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___: ${___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___}`)
-  const bookmarks = await browser.bookmarks.getChildren(___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___)
-  if (count > bookmarks.length) {
-    count = bookmarks.length
+  let bookmarks = await browser.bookmarks.getRecent(50)
+  for (let bookmark of bookmarks) {
+    if (bookmark.parentId == ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___) {
+      return bookmarks[0]
+    }
   }
-  return bookmarks.slice(count)
+  return null
 }
 
 async function removeBookmark(id, parentId) {
