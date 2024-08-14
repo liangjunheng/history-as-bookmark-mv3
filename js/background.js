@@ -47,21 +47,24 @@ async function saveHistoryByBookmark() {
 
 // 把浏览历史保存到书签
 async function saveHistoryByBookmarkLocked() {
-  // 获取最新书签对应的那条浏览记录
-  let lastHistoryItem;
   // 获取插件最新保存的书签
   const bookmark = await getRecentBookmark();
+  // 获取最新书签对应的那条浏览记录
+  let lastHistoryItem;
   if(bookmark && bookmark.url) {
-    // console.info('bootmarkHistories: ' + 'bookmark: ' + bookmark.title)
-    const historyItems = await browser.history.search({text: bookmark.url, maxResults: 1})
-    if (historyItems.length > 0) {
+    console.info(`saveHistoryByBookmarkLocked, recentBookmark: title: ${bookmark.title}, url: ${bookmark.url}, dateAdded: ${bookmark.dateAdded}`)
+    let historyItems = await browser.history.search({text: decodeURIComponent(bookmark.url), startTime: 0, maxResults: 1})
+    if (historyItems.length > 0 && historyItems[0].url == bookmark.url) {
       lastHistoryItem = historyItems[0]
-      // console.info('bootmarkHistories: ' + 'lastHistoryItem: ' + historyItems[0].title)
+      console.info(`saveHistoryByBookmarkLocked, foundHistoryItem: title: ${lastHistoryItem.title}, url: ${lastHistoryItem.url}, lastVisitTime: ${lastHistoryItem.lastVisitTime}`)
     }
   }
 
   // 定义获取浏览历史的开始时间
   let lastSavedBookmarkTime = 0
+  if(bookmark) {
+    lastSavedBookmarkTime = bookmark.dateAdded
+  }
   if(lastHistoryItem) {
     lastSavedBookmarkTime = lastHistoryItem.lastVisitTime
   }
@@ -71,12 +74,21 @@ async function saveHistoryByBookmarkLocked() {
   // !(lastHistoryItem && item.id == lastHistoryItem.id) 因为lastHistoryItem已经保存到书签，所以丢弃该历史记录
   histories = histories.filter(item => !isInvalidHistory(item.url) && !(lastHistoryItem && item.id == lastHistoryItem.id))
   histories.sort((a, b) => a.lastVisitTime - b.lastVisitTime);
-  console.info('histories'+ ', lastSavedBookmarkTime: ' + lastSavedBookmarkTime + ', size: ' + (histories.length) )
+  console.info('saveHistoryByBookmarkLocked'+ ', lastSavedBookmarkTime: ' + lastSavedBookmarkTime + ', size: ' + (histories.length) )
   
   // 循环查询的浏览历史另保存为书签
-  for (var ht of histories) {
-      // console.info('existingBookmark, title:' + (existingBookmark))
-      await createAndUpdateHistoryBookamrks(ht.title, ht.url)
+  let idleState = 'idle'
+  for (let [index, ht] of histories.entries()) {
+    if (index % 3 == 0 && idleState == 'active') {
+      // 浏览器处于忙碌状态，慢慢创建书签
+      // console.info('saveHistoryByBookmarkLocked is busy, sleep a moment!')
+      await sleep(2048)
+    }
+    // console.info(`saveHistoryByBookmarkLocked,creating bookmarks title: ${ht.title}`)
+    await createAndUpdateHistoryBookmarks(ht.title, ht.url)
+
+    // 更新一下状态
+    idleState = await chrome.idle.queryState(15)
   }
 }
 

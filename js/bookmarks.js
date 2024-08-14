@@ -20,12 +20,23 @@ async function createHistoryBookmarkFolder(name = ___EXTENSION_HISTORY_AS_BOOKMA
 async function getRecentBookmark() {
   await createHistoryBookmarkFolder()
   // console.info(`getRecentBookmarks, ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___: ${___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___}`)
+
+  // 先获取最近添加的50条，如果存在直接返回
   let bookmarks = await browser.bookmarks.getRecent(50)
   for (let bookmark of bookmarks) {
     if (bookmark.parentId == ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___) {
       return bookmark
     }
   }
+
+  // 兜底策略，比较耗时
+  // 获取 ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER___ 目录下所有的书签，并按最新时间开始排序
+  bookmarks = await browser.bookmarks.getChildren(___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___)
+  bookmarks.sort((a, b) => b.dateAdded - a.dateAdded);
+  if(bookmarks.length > 0){
+    return bookmarks[0]
+  }
+
   return null
 }
 
@@ -37,6 +48,7 @@ async function removeBookmark(id, parentId) {
   
   try {
     await browser.bookmarks.remove(id)
+    await sleep(16)
   } catch (error) {
     console.warn('removeBookmark id:' + id + ', error: ' + error)
   }
@@ -66,7 +78,7 @@ async function removeBookmarkByTitle(title) {
   }
 }
 
-async function createAndUpdateHistoryBookamrks(title, url) {
+async function createAndUpdateHistoryBookmarks(title, url) {
   if (!url || !title) {
     console.warn(`title(${title}), url(${url}) and folderId(${___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___}) required when creating bookmark.`)
     return Promise.resolve(null)
@@ -80,5 +92,10 @@ async function createAndUpdateHistoryBookamrks(title, url) {
   await removeBookmarkByUrl(url)
   // 创建书签
   const newBookmark = await browser.bookmarks.create({title: title, url: url, parentId: ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___, index: 0})
+  await sleep(16)
   return Promise.resolve(newBookmark)
+}
+
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
