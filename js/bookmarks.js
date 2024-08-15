@@ -20,16 +20,7 @@ async function createHistoryBookmarkFolder(name = ___EXTENSION_HISTORY_AS_BOOKMA
 async function getRecentBookmark() {
   await createHistoryBookmarkFolder()
   // console.info(`getRecentBookmarks, ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___: ${___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___}`)
-
-  // 先获取最近添加的50条，如果存在直接返回
-  let bookmarks = await browser.bookmarks.getRecent(50)
-  for (let bookmark of bookmarks) {
-    if (bookmark.parentId == ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___) {
-      return bookmark
-    }
-  }
-
-  // 兜底策略，比较耗时
+  
   // 获取 ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER___ 目录下所有的书签，并按最新时间开始排序
   bookmarks = await browser.bookmarks.getChildren(___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___)
   bookmarks.sort((a, b) => b.dateAdded - a.dateAdded);
