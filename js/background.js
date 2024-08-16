@@ -49,30 +49,22 @@ async function saveHistoryByBookmark() {
 async function saveHistoryByBookmarkLocked() {
   // 获取插件最新保存的书签
   const bookmark = await getRecentBookmark();
-  // 获取最新书签对应的那条浏览记录
-  let lastHistoryItem;
+
+  // 获取浏览历史的开始时间
+  let lastSavedBookmarkTime = bookmark.dateAdded;
   if(bookmark && bookmark.url) {
     console.info(`saveHistoryByBookmarkLocked, recentBookmark: title: ${bookmark.title}, url: ${bookmark.url}, dateAdded: ${bookmark.dateAdded}`)
-    let historyItems = await browser.history.search({text: decodeURIComponent(bookmark.url), startTime: 0, maxResults: 1})
-    if (historyItems.length > 0 && historyItems[0].url == bookmark.url) {
-      lastHistoryItem = historyItems[0]
-      console.info(`saveHistoryByBookmarkLocked, foundHistoryItem: title: ${lastHistoryItem.title}, url: ${lastHistoryItem.url}, lastVisitTime: ${lastHistoryItem.lastVisitTime}`)
+    let visitItems = await browser.history.getVisits({url: bookmark.url})
+    if(visitItems.length > 0){
+      lastSavedBookmarkTime = visitItems[visitItems.length - 1].visitTime
+      // console.info(`saveHistoryByBookmarkLocked, foundHistoryItem: lastSavedBookmarkTime: ${lastSavedBookmarkTime}`)
     }
-  }
-
-  // 定义获取浏览历史的开始时间
-  let lastSavedBookmarkTime = 0
-  if(bookmark) {
-    lastSavedBookmarkTime = bookmark.dateAdded
-  }
-  if(lastHistoryItem) {
-    lastSavedBookmarkTime = lastHistoryItem.lastVisitTime
   }
 
   // 获取浏览历史
   let histories = await browser.history.search({text: '', startTime: lastSavedBookmarkTime, maxResults: 1000000})
   // !(lastHistoryItem && item.id == lastHistoryItem.id) 因为lastHistoryItem已经保存到书签，所以丢弃该历史记录
-  histories = histories.filter(item => !isInvalidHistory(item.url) && !(lastHistoryItem && item.id == lastHistoryItem.id))
+  histories = histories.filter(item => !isInvalidHistory(item.url) && item.url != bookmark.url)
   histories.sort((a, b) => a.lastVisitTime - b.lastVisitTime);
   console.info('saveHistoryByBookmarkLocked'+ ', lastSavedBookmarkTime: ' + lastSavedBookmarkTime + ', size: ' + (histories.length) )
   
