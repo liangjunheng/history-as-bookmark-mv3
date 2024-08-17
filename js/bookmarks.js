@@ -39,7 +39,7 @@ async function removeBookmark(id, parentId) {
   
   try {
     await browser.bookmarks.remove(id)
-    await sleep(16)
+    await sleep(32)
   } catch (error) {
     console.warn('removeBookmark id:' + id + ', error: ' + error)
   }
@@ -83,7 +83,7 @@ async function createAndUpdateHistoryBookmarks(title, url) {
   await removeBookmarkByUrl(url)
   // 创建书签
   const newBookmark = await browser.bookmarks.create({title: title, url: url, parentId: ___EXTENSION_HISTORY_AS_BOOKMARKS_FOLDER_ID___, index: 0})
-  await sleep(16)
+  await sleep(32)
   return Promise.resolve(newBookmark)
 }
 

@@ -57,7 +57,7 @@ async function saveHistoryByBookmarkLocked() {
     let visitItems = await browser.history.getVisits({url: bookmark.url})
     if(visitItems.length > 0){
       lastSavedBookmarkTime = visitItems[visitItems.length - 1].visitTime
-      // console.info(`saveHistoryByBookmarkLocked, foundHistoryItem: lastSavedBookmarkTime: ${lastSavedBookmarkTime}`)
+      console.info(`saveHistoryByBookmarkLocked, foundHistoryItem: lastSavedBookmarkTime: ${lastSavedBookmarkTime}`)
     }
   }
 
@@ -66,7 +66,7 @@ async function saveHistoryByBookmarkLocked() {
   // !(lastHistoryItem && item.id == lastHistoryItem.id) 因为lastHistoryItem已经保存到书签，所以丢弃该历史记录
   histories = histories.filter(item => !isInvalidHistory(item.url) && item.url != bookmark.url)
   histories.sort((a, b) => a.lastVisitTime - b.lastVisitTime);
-  console.info('saveHistoryByBookmarkLocked'+ ', lastSavedBookmarkTime: ' + lastSavedBookmarkTime + ', size: ' + (histories.length) )
+  console.info(`saveHistoryByBookmarkLocked, size: ${histories.length}`)
   
   // 循环查询的浏览历史另保存为书签
   let idleState = 'idle'
@@ -74,7 +74,7 @@ async function saveHistoryByBookmarkLocked() {
     if (index % 3 == 0 && idleState == 'active') {
       // 浏览器处于忙碌状态，慢慢创建书签
       // console.info('saveHistoryByBookmarkLocked is busy, sleep a moment!')
-      await sleep(2048)
+      await sleep(3200)
     }
     // console.info(`saveHistoryByBookmarkLocked,creating bookmarks title: ${ht.title}`)
     await createAndUpdateHistoryBookmarks(ht.title, ht.url)
