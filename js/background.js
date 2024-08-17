@@ -13,7 +13,7 @@ keepAlive();
 saveHistoryByBookmark()
 
 // 网页关闭时保存到书签
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete') {
         // console.log(`页面 status: ${changeInfo.status}`);
         console.log(`tabs.onUpdated --> title: ${tab.title}, url: ${tab.url}`);
@@ -74,13 +74,13 @@ async function saveHistoryByBookmarkLocked() {
     if (index % 3 == 0 && idleState == 'active') {
       // 浏览器处于忙碌状态，慢慢创建书签
       // console.info('saveHistoryByBookmarkLocked is busy, sleep a moment!')
-      await sleep(3200)
+      await sleep(2500)
     }
     // console.info(`saveHistoryByBookmarkLocked,creating bookmarks title: ${ht.title}`)
     await createAndUpdateHistoryBookmarks(ht.title, ht.url)
 
     // 更新一下状态
-    idleState = await chrome.idle.queryState(15)
+    idleState = await browser.idle.queryState(15)
   }
 }
 
